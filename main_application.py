@@ -397,7 +397,7 @@ class DataGenerator:
         return pd.DataFrame({
             'transaction_id': [f'TXN_{i:06d}' for i in range(count)],
             'amount': all_amounts,
-            'date': pd.date_range('2024-01-01', periods=count, freq='H'),
+            'date': pd.date_range('2024-01-01', periods=count, freq='h'),
             'department': np.random.choice(['Finance', 'Operations', 'IT', 'HR', 'Marketing'], count),
             'user_id': [f'USR_{np.random.randint(1, 500):04d}' for _ in range(count)],
             'vendor_id': [f'VND_{np.random.randint(1, 1000):04d}' for _ in range(count)],
@@ -793,7 +793,7 @@ qwen_status = "Live" if cloud_services['status']['ai_engine_ready'] else "Mock"
 
 st.markdown(f"""
 <div style="text-align: center; color: #666; font-size: 0.85em; margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
-    <p>© 2024 MS Hadianto | Advanced AI Solutions for Internal Audit</p>
+    <p>© 2025 MS Hadianto | RAG & Agentic AI Enthusiast</p>
     <p>Last Updated: {current_time.strftime("%B %d, %Y at %H:%M:%S")} | 
     Build: {st.session_state.app_version} | 
     Session: {st.session_state.session_id}</p>
