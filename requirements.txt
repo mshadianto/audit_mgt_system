@@ -1,30 +1,14 @@
-# Core dependencies
-streamlit==1.28.1
-pandas==2.0.3
-numpy==1.24.3
-plotly==5.17.0
-python-dotenv==1.0.0
+# requirements.txt - CLEAN VERSION
+streamlit>=1.28.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+plotly>=5.17.0,<6.0.0
+openai>=1.3.0,<2.0.0
+python-dotenv>=1.0.0,<2.0.0
+python-docx>=1.1.0,<2.0.0
+PyPDF2>=3.0.0,<4.0.0
 
-# AI and ML
-openai==1.3.0
-sentence-transformers==2.2.2
+# Optional - only if Firebase needed
+firebase-admin>=6.2.0,<7.0.0
 
-# Document processing
-python-docx==1.1.0
-PyPDF2==3.0.1
-
-# Database (optional)
-firebase-admin==6.2.0
-
-# Vector DB (install last, optional)
-protobuf==3.20.3
-chromadb==0.4.15
-
-# Additional utilities
-uuid
-hashlib
-datetime
-asyncio
-aiohttp
-dataclasses
-logging
+# Skip ChromaDB untuk avoid protobuf conflicts
+# chromadb>=0.4.0,<1.0.0
