@@ -1744,7 +1744,7 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        months = pd.date_range('2024-01-01', periods=12, freq='M')
+        months = pd.date_range('2024-01-01', periods=12, freq='ME')
         audit_data = {
             'Month': months,
             'Findings': np.random.poisson(8, 12),
