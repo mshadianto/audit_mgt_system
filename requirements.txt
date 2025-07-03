@@ -11,7 +11,7 @@ plotly>=5.17.0,<6.0.0
 # AI Integration
 openai>=1.3.0,<2.0.0
 
-# HTTP Client (MISSING - ini yang error!)
+# HTTP Client
 aiohttp>=3.8.0,<4.0.0
 
 # Environment & Utilities
@@ -30,11 +30,3 @@ protobuf>=3.20.0,<4.0.0
 
 # Vector Database (Optional - dapat di-comment jika error)
 chromadb>=0.4.0,<1.0.0
-
-# Additional Python Built-ins (biasanya tidak perlu, tapi untuk safety)
-asyncio
-uuid
-hashlib
-datetime
-dataclasses
-logging
