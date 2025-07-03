@@ -1283,7 +1283,7 @@ class AnalyticsEngine:
     
     @staticmethod
     def predict_risk_trends(historical_data: pd.DataFrame, periods: int = 6) -> pd.DataFrame:
-        dates = pd.date_range(start=datetime.now(), periods=periods, freq='M')
+        dates = pd.date_range(start=datetime.now(), periods=periods, freq='ME')
         
         base_risk = historical_data.get('risk_score', pd.Series([5.0])).mean()
         if pd.isna(base_risk):
