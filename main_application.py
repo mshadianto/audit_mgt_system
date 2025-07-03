@@ -2375,7 +2375,7 @@ with tab4:
                         values=list(file_analytics['file_types'].values()),
                         title="📄 File Type Distribution"
                     )
-                    st.plotly_chart(fig_file_types, use_container_width=True)
+                    st.plotly_chart(fig_file_types, use_container_width=True, key="file_types_chart")
             
             with col2:
                 if file_analytics.get('categories'):
