@@ -459,8 +459,8 @@ class FirebaseManager:
             logger.warning(f"Collection initialization warning: {e}")
     
     def save_file_to_firestore(self, file_content: bytes, file_name: str, file_type: str, 
-                              category: str = "general", tags: List[str] = None, 
-                              associated_finding_id: str = None) -> Dict[str, Any]:
+                                 category: str = "general", tags: List[str] = None, 
+                                 associated_finding_id: str = None) -> Dict[str, Any]:
         """Save file to Firestore with Base64 encoding (optimized for Spark plan)"""
         if not self.connected:
             return {"success": False, "error": "Firebase not connected"}
@@ -877,7 +877,7 @@ class FirebaseManager:
             logger.warning(f"Analytics update failed: {e}")
     
     def create_notification(self, notification_type: str, title: str, message: str, 
-                          priority: str = "medium", recipients: List[str] = None) -> bool:
+                              priority: str = "medium", recipients: List[str] = None) -> bool:
         if not self.connected:
             return False
             
@@ -1283,7 +1283,7 @@ class AnalyticsEngine:
     
     @staticmethod
     def predict_risk_trends(historical_data: pd.DataFrame, periods: int = 6) -> pd.DataFrame:
-        dates = pd.date_range(start=datetime.now(), periods=periods, freq='M')
+        dates = pd.date_range(start=datetime.now(), periods=periods, freq='ME')
         
         base_risk = historical_data.get('risk_score', pd.Series([5.0])).mean()
         if pd.isna(base_risk):
@@ -1651,7 +1651,7 @@ with tab1:
                         values=list(file_analytics['file_types'].values()),
                         title="📄 File Type Distribution"
                     )
-                    st.plotly_chart(fig_file_types, use_container_width=True)
+                    st.plotly_chart(fig_file_types, use_container_width=True, key="fig_file_types")
                 
                 with col2:
                     if file_analytics.get('categories'):
@@ -1660,7 +1660,7 @@ with tab1:
                             y=list(file_analytics['categories'].values()),
                             title="📂 File Categories"
                         )
-                        st.plotly_chart(fig_categories, use_container_width=True)
+                        st.plotly_chart(fig_categories, use_container_width=True, key="fig_categories")
         
         # Firebase-powered insights
         if dashboard_data:
@@ -1683,8 +1683,8 @@ with tab1:
                 })
                 
                 fig_metrics = px.bar(metrics_data, x='Metric', y='Count', 
-                                   color='Status', title="Live Audit Findings")
-                st.plotly_chart(fig_metrics, use_container_width=True)
+                                     color='Status', title="Live Audit Findings")
+                st.plotly_chart(fig_metrics, use_container_width=True, key="fig_metrics")
                 
             with col2:
                 st.markdown("**🤖 AI Usage Analytics**")
@@ -1702,8 +1702,8 @@ with tab1:
                 })
                 
                 fig_ai_trend = px.line(ai_trend_data, x='Hour', y='Interactions',
-                                     title="AI Usage Pattern Today")
-                st.plotly_chart(fig_ai_trend, use_container_width=True)
+                                       title="AI Usage Pattern Today")
+                st.plotly_chart(fig_ai_trend, use_container_width=True, key="fig_ai_trend")
         
         # Real-time notifications
         st.subheader("🔔 Real-time Notifications & Alerts")
@@ -1759,7 +1759,7 @@ with tab1:
             y=['Findings', 'Resolved', 'High Risk'],
             title="📈 Monthly Audit Trends"
         )
-        st.plotly_chart(fig_monthly, use_container_width=True)
+        st.plotly_chart(fig_monthly, use_container_width=True, key="fig_monthly_trends")
     
     with col2:
         risk_data = pd.DataFrame({
@@ -1775,7 +1775,7 @@ with tab1:
             color='Count',
             title="⚠️ Risk by Category"
         )
-        st.plotly_chart(fig_risk, use_container_width=True)
+        st.plotly_chart(fig_risk, use_container_width=True, key="fig_risk_category")
 
 with tab2:
     st.header("🤖 Qwen3 RAG AI Assistant")
@@ -1990,7 +1990,7 @@ with tab3:
                     title="🕐 Real-time Transaction Timeline",
                     color_discrete_map={True: 'red', False: 'blue'}
                 )
-                st.plotly_chart(fig_timeline, use_container_width=True)
+                st.plotly_chart(fig_timeline, use_container_width=True, key="fig_timeline")
             
             with col2:
                 anomaly_count = transaction_data['is_anomaly'].sum()
@@ -2010,7 +2010,7 @@ with tab3:
                         names=dept_anomalies.index,
                         title="Anomalies by Department"
                     )
-                    st.plotly_chart(fig_dept, use_container_width=True)
+                    st.plotly_chart(fig_dept, use_container_width=True, key="fig_dept_anomalies")
     
     st.subheader("🔮 Predictive Risk Analytics")
     
@@ -2058,7 +2058,7 @@ with tab3:
                 height=400
             )
             
-            st.plotly_chart(fig_prediction, use_container_width=True)
+            st.plotly_chart(fig_prediction, use_container_width=True, key="fig_risk_prediction")
             
             avg_predicted_risk = predictions['predicted_risk'].mean()
             st.markdown(f"""
@@ -2384,7 +2384,7 @@ with tab4:
                         y=list(file_analytics['categories'].values()),
                         title="📂 File Categories"
                     )
-                    st.plotly_chart(fig_categories, use_container_width=True)
+                    st.plotly_chart(fig_categories, use_container_width=True, key="fig_categories_management")
     
     else:
         st.error("🚨 Firebase not connected! Please configure Firebase to enable file management.")
@@ -2474,16 +2474,16 @@ with tab5:
                 
                 with col_filter1:
                     severity_filter = st.selectbox("Filter by Severity:", 
-                                                 ["All", "Critical", "High", "Medium", "Low"], 
-                                                 key="severity_filter")
+                                                   ["All", "Critical", "High", "Medium", "Low"], 
+                                                   key="severity_filter")
                 with col_filter2:
                     status_filter = st.selectbox("Filter by Status:", 
-                                                ["All", "Open", "In Progress", "Closed"], 
-                                                key="status_filter")
+                                                 ["All", "Open", "In Progress", "Closed"], 
+                                                 key="status_filter")
                 with col_filter3:
                     area_filter = st.selectbox("Filter by Area:", 
-                                              ["All", "Financial Controls", "IT Security", "Operations", "Compliance"], 
-                                              key="area_filter")
+                                               ["All", "Financial Controls", "IT Security", "Operations", "Compliance"], 
+                                               key="area_filter")
                 
                 # Build filters
                 filters = {}
@@ -2501,7 +2501,7 @@ with tab5:
                     
                     # Enhanced display with risk scores and priorities
                     display_columns = ['title', 'severity', 'status', 'risk_score', 'priority', 
-                                     'owner', 'due_date', 'sox_related', 'days_overdue']
+                                       'owner', 'due_date', 'sox_related', 'days_overdue']
                     
                     if all(col in findings_df.columns for col in display_columns):
                         display_df = findings_df[display_columns].copy()
@@ -2536,9 +2536,9 @@ with tab5:
                         
                         # Risk distribution chart
                         fig_risk_dist = px.histogram(findings_df, x='risk_score', 
-                                                   title="Risk Score Distribution",
-                                                   nbins=10)
-                        st.plotly_chart(fig_risk_dist, use_container_width=True)
+                                                     title="Risk Score Distribution",
+                                                     nbins=10)
+                        st.plotly_chart(fig_risk_dist, use_container_width=True, key="fig_risk_distribution")
                         
                 else:
                     st.info("No findings found with current filters")

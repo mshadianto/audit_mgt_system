@@ -1,0 +1,6 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting pyarrow
+  Downloading pyarrow-20.0.0-cp311-cp311-win_amd64.whl (25.8 MB)
+     ---------------------------------------- 25.8/25.8 MB 2.3 MB/s eta 0:00:00
+Installing collected packages: pyarrow
+Successfully installed pyarrow-20.0.0
