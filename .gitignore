@@ -1,6 +1,15 @@
-# Streamlit
+# .gitignore
+# Security & Performance Configuration for Audit Management System
+
+# Streamlit secrets and config
 .streamlit/secrets.toml
-.streamlit/config.toml
+.streamlit/credentials.toml
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
 
 # Python
 __pycache__/
@@ -20,24 +29,29 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# Virtual Environment
+# Virtual environments
 venv/
-env/
 ENV/
-env.bak/
-venv.bak/
+env/
+.venv/
+
+# Firebase credentials
+*-firebase-adminsdk-*.json
+firebase-credentials.json
+service-account-key.json
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
@@ -52,42 +66,35 @@ Thumbs.db
 *.log
 logs/
 
-# Environment Variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Firebase
-firebase-debug.log
-.firebase/
-
-# API Keys and Secrets
-secrets.json
-service-account-key.json
-*.pem
-*.key
-
 # Temporary files
-*.tmp
-*.temp
-temp/
 tmp/
+temp/
+*.tmp
 
-# Database
+# Database files
 *.db
 *.sqlite
-*.sqlite3
+
+# Backup files
+backup/
+*_backup.py
+*_old.py
+
+# Performance and cache
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Coverage reports
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+# Large files
+*.zip
+*.tar.gz
+*.rar
+
+# Sensitive data
+audit_data/
+confidential/
+private/

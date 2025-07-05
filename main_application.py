@@ -1,13 +1,25 @@
 """
 RAG Agentic AI Internal Audit System
 Firebase Firestore + Qwen3 via OpenRouter Implementation
-Python 3.11+ Compatible - UPDATED VERSION WITH ENHANCED FILE UPLOAD
+Python 3.11+ Compatible - COMPLETE FIXED VERSION
 
 Dependencies:
 pip install streamlit firebase-admin openai chromadb sentence-transformers pandas numpy plotly python-dotenv python-docx PyPDF2
 """
 
 import streamlit as st
+
+# ================================================================
+# CRITICAL: st.set_page_config() MUST BE FIRST STREAMLIT COMMAND!
+# ================================================================
+st.set_page_config(
+    page_title="🔍 CIA RAG AI - Firebase + Qwen3",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Now safe to import everything else
 import pandas as pd
 import numpy as np
 import json
@@ -20,8 +32,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import List, Dict, Any, Optional
 import hashlib
-import asyncio
-import aiohttp
 from dataclasses import dataclass
 import uuid
 import logging
@@ -30,6 +40,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Initialize error tracking variables (don't show errors yet!)
+FIREBASE_AVAILABLE = False
+VECTOR_DB_AVAILABLE = False
+CHROMADB_ERROR = None
+DOCX_AVAILABLE = False
+PDF_AVAILABLE = False
+OPENAI_AVAILABLE = False
+
 # Firebase imports
 try:
     import firebase_admin
@@ -37,99 +55,20 @@ try:
     FIREBASE_AVAILABLE = True
 except ImportError:
     FIREBASE_AVAILABLE = False
-    st.warning("🚨 Firebase Admin SDK not installed. Install: pip install firebase-admin")
 
 # Vector database imports with protobuf error handling
-VECTOR_DB_AVAILABLE = False
-CHROMADB_ERROR = None
-
 try:
     import chromadb
     from sentence_transformers import SentenceTransformer
     VECTOR_DB_AVAILABLE = True
 except ImportError as e:
     CHROMADB_ERROR = f"Import error: {str(e)}"
-    missing_packages = []
-    try:
-        import chromadb
-    except ImportError:
-        missing_packages.append("chromadb")
-    try:
-        from sentence_transformers import SentenceTransformer
-    except ImportError:
-        missing_packages.append("sentence-transformers")
-    
-    if missing_packages:
-        st.warning(f"🚨 Vector database dependencies missing: {', '.join(missing_packages)}. Install: pip install {' '.join(missing_packages)}")
 except Exception as e:
     # Handle protobuf descriptor error specifically
     if "Descriptors cannot be created directly" in str(e) or "protobuf" in str(e).lower():
         CHROMADB_ERROR = "protobuf_conflict"
-        st.error("""
-        🚨 **ChromaDB Protobuf Conflict Detected!**
-        
-        **Quick Fix Options:**
-        
-        **Option 1 (Recommended):** Downgrade protobuf
-        ```bash
-        pip install protobuf==3.20.3
-        ```
-        
-        **Option 2:** Set environment variable
-        ```bash
-        set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-        ```
-        Then restart your application.
-        
-        **Option 3:** Use alternative vector storage (implemented below)
-        """)
     else:
         CHROMADB_ERROR = f"Unknown error: {str(e)}"
-        st.error(f"🚨 ChromaDB initialization error: {str(e)}")
-
-# Simple in-memory vector storage as fallback
-class SimpleVectorStorage:
-    """Lightweight in-memory vector storage as ChromaDB alternative"""
-    
-    def __init__(self):
-        self.documents = []
-        self.embeddings = []
-        self.metadatas = []
-        self.ids = []
-        
-    def add(self, embeddings, documents, metadatas, ids):
-        """Add documents to storage"""
-        self.embeddings.extend(embeddings)
-        self.documents.extend(documents)
-        self.metadatas.extend(metadatas)
-        self.ids.extend(ids)
-        
-    def query(self, query_embeddings, n_results=5):
-        """Simple cosine similarity search"""
-        if not self.embeddings:
-            return {'documents': [[]], 'metadatas': [[]], 'distances': [[]]}
-            
-        import numpy as np
-        
-        query_embedding = np.array(query_embeddings[0])
-        similarities = []
-        
-        for embedding in self.embeddings:
-            doc_embedding = np.array(embedding)
-            # Cosine similarity
-            similarity = np.dot(query_embedding, doc_embedding) / (
-                np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
-            )
-            similarities.append(1 - similarity)  # Convert to distance
-        
-        # Get top results
-        top_indices = np.argsort(similarities)[:n_results]
-        
-        return {
-            'documents': [[self.documents[i] for i in top_indices]],
-            'metadatas': [[self.metadatas[i] for i in top_indices]],
-            'distances': [[similarities[i] for i in top_indices]]
-        }
 
 # Document processing imports
 try:
@@ -150,21 +89,14 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
-    st.warning("🚨 OpenAI package not found. Install: pip install openai")
 
 # Environment variables
 from dotenv import load_dotenv
 load_dotenv()
 
-# Configuration
-st.set_page_config(
-    page_title="🔍 CIA RAG AI - Firebase + Qwen3",
-    page_icon="🔍",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Custom CSS
+# ================================================================
+# CUSTOM CSS
+# ================================================================
 st.markdown("""
 <style>
     .main-header {
@@ -259,6 +191,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ================================================================
+# DATA CLASSES
+# ================================================================
 @dataclass
 class AuditFinding:
     id: str
@@ -283,6 +218,53 @@ class UploadedFile:
     tags: List[str]
     processed: bool = False
 
+# ================================================================
+# SIMPLE VECTOR STORAGE CLASS
+# ================================================================
+class SimpleVectorStorage:
+    """Lightweight in-memory vector storage as ChromaDB alternative"""
+    
+    def __init__(self):
+        self.documents = []
+        self.embeddings = []
+        self.metadatas = []
+        self.ids = []
+        
+    def add(self, embeddings, documents, metadatas, ids):
+        """Add documents to storage"""
+        self.embeddings.extend(embeddings)
+        self.documents.extend(documents)
+        self.metadatas.extend(metadatas)
+        self.ids.extend(ids)
+        
+    def query(self, query_embeddings, n_results=5):
+        """Simple cosine similarity search"""
+        if not self.embeddings:
+            return {'documents': [[]], 'metadatas': [[]], 'distances': [[]]}
+            
+        query_embedding = np.array(query_embeddings[0])
+        similarities = []
+        
+        for embedding in self.embeddings:
+            doc_embedding = np.array(embedding)
+            # Cosine similarity
+            similarity = np.dot(query_embedding, doc_embedding) / (
+                np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
+            )
+            similarities.append(1 - similarity)  # Convert to distance
+        
+        # Get top results
+        top_indices = np.argsort(similarities)[:n_results]
+        
+        return {
+            'documents': [[self.documents[i] for i in top_indices]],
+            'metadatas': [[self.metadatas[i] for i in top_indices]],
+            'distances': [[similarities[i] for i in top_indices]]
+        }
+
+# ================================================================
+# FILE PROCESSOR CLASS
+# ================================================================
 class FileProcessor:
     """Enhanced file processing for various document types"""
     
@@ -392,6 +374,9 @@ class FileProcessor:
         
         return result
 
+# ================================================================
+# FIREBASE MANAGER CLASS
+# ================================================================
 class FirebaseManager:
     """Enhanced Firebase Firestore Manager with File Management"""
     
@@ -416,7 +401,6 @@ class FirebaseManager:
                 if os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
                     cred = credentials.ApplicationDefault()
                 else:
-                    st.error("🚨 Firebase credentials not found!")
                     return False
                     
             firebase_admin.initialize_app(cred)
@@ -426,7 +410,7 @@ class FirebaseManager:
             return True
             
         except Exception as e:
-            st.error(f"Firebase initialization error: {str(e)}")
+            logger.error(f"Firebase initialization error: {str(e)}")
             self.connected = False
             return False
     
@@ -437,7 +421,7 @@ class FirebaseManager:
                 'audit_findings', 'audit_programs', 'risk_assessments', 
                 'compliance_tracking', 'users', 'organizations', 
                 'ai_interactions', 'notifications', 'audit_evidence',
-                'workflows', 'analytics', 'templates', 'uploaded_files'  # Added uploaded_files
+                'workflows', 'analytics', 'templates', 'uploaded_files'
             ]
             
             for collection_name in collections:
@@ -654,7 +638,6 @@ class FirebaseManager:
             logger.error(f"Error getting file analytics: {e}")
             return {}
     
-    # Include all other methods from the original FirebaseManager class
     def save_audit_finding_enhanced(self, finding: AuditFinding, user_id: str = "system") -> bool:
         """Enhanced audit finding save with versioning and audit trail"""
         if not self.connected:
@@ -712,7 +695,7 @@ class FirebaseManager:
             return True
             
         except Exception as e:
-            st.error(f"Error saving enhanced finding: {str(e)}")
+            logger.error(f"Error saving enhanced finding: {str(e)}")
             return False
     
     def get_audit_findings_enhanced(self, filters: Dict = None, limit: int = 100) -> List[Dict]:
@@ -754,7 +737,7 @@ class FirebaseManager:
             return findings
             
         except Exception as e:
-            st.error(f"Error retrieving enhanced findings: {str(e)}")
+            logger.error(f"Error retrieving enhanced findings: {str(e)}")
             return []
     
     def get_dashboard_analytics(self) -> Dict:
@@ -798,7 +781,7 @@ class FirebaseManager:
             return analytics
             
         except Exception as e:
-            st.error(f"Error getting dashboard analytics: {str(e)}")
+            logger.error(f"Error getting dashboard analytics: {str(e)}")
             return {}
     
     # Helper methods
@@ -905,11 +888,14 @@ class FirebaseManager:
             return True
             
         except Exception as e:
-            st.error(f"Error creating notification: {str(e)}")
+            logger.error(f"Error creating notification: {str(e)}")
             return False
 
+# ================================================================
+# QWEN RAG ENGINE CLASS
+# ================================================================
 class QwenRAGEngine:
-    """RAG Engine with Qwen3 via OpenRouter - UPDATED"""
+    """RAG Engine with Qwen3 via OpenRouter - FIXED"""
     
     def __init__(self, api_key: str, model: str = "qwen/qwen-2.5-72b-instruct"):
         self.api_key = api_key
@@ -930,7 +916,6 @@ class QwenRAGEngine:
                 logger.info("OpenAI client initialized successfully")
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
-                st.error(f"Failed to initialize AI client: {e}")
         
         self._initialize_vector_db()
         
@@ -949,7 +934,6 @@ class QwenRAGEngine:
                 return True
             except Exception as e:
                 logger.error(f"Failed to initialize fallback storage: {e}")
-                st.warning("⚠️ Vector storage not available. AI will work without document context.")
                 return False
             
         try:
@@ -981,12 +965,10 @@ class QwenRAGEngine:
                 self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
                 self.collection = SimpleVectorStorage()
                 logger.info("Using simple vector storage fallback after ChromaDB failed")
-                st.info("💡 Using fallback vector storage. For better performance, fix ChromaDB installation.")
                 self.initialized = True
                 return True
             except Exception as fallback_error:
                 logger.error(f"Fallback storage also failed: {fallback_error}")
-                st.error(f"Vector storage initialization failed: {str(fallback_error)}")
                 self.collection = None
                 self.embedder = None
                 self.initialized = False
@@ -1003,7 +985,6 @@ class QwenRAGEngine:
     def add_to_knowledge_base(self, documents: List[Dict[str, str]]) -> bool:
         if not self.is_ready():
             logger.warning("RAG engine not ready for knowledge base operations")
-            st.warning("RAG engine not properly initialized. Some features may not work.")
             return False
             
         try:
@@ -1032,7 +1013,6 @@ class QwenRAGEngine:
             
         except Exception as e:
             logger.error(f"Error adding to knowledge base: {e}")
-            st.error(f"Error adding to knowledge base: {str(e)}")
             return False
     
     def retrieve_relevant_docs(self, query: str, n_results: int = 5) -> List[Dict]:
@@ -1061,7 +1041,6 @@ class QwenRAGEngine:
             
         except Exception as e:
             logger.error(f"Error retrieving documents: {e}")
-            st.error(f"Error retrieving documents: {str(e)}")
             return []
     
     def generate_response(self, query: str, context_docs: List[Dict] = None) -> Dict[str, Any]:
@@ -1246,6 +1225,9 @@ class QwenRAGEngine:
         
         return risk_indicators[:6]
 
+# ================================================================
+# ANALYTICS ENGINE CLASS
+# ================================================================
 class AnalyticsEngine:
     """Advanced Analytics Engine for Audit Data"""
     
@@ -1306,6 +1288,9 @@ class AnalyticsEngine:
             'confidence_interval_upper': [r * 1.1 for r in predicted_risks]
         })
 
+# ================================================================
+# SESSION STATE AND CACHE SETUP
+# ================================================================
 # Initialize session state
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
@@ -1345,7 +1330,9 @@ def get_current_rag_engine():
         st.session_state.rag_config.get("model", "qwen/qwen-2.5-72b-instruct")
     )
 
-# Header
+# ================================================================
+# MAIN APPLICATION HEADER
+# ================================================================
 st.markdown("""
 <div class="main-header">
     <h1>🔍 RAG Agentic AI - Internal Audit System</h1>
@@ -1353,28 +1340,53 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Quick troubleshooting alert for protobuf issues
-if CHROMADB_ERROR == "protobuf_conflict":
-    st.error("""
-    🚨 **Quick Fix Required: ChromaDB Protobuf Conflict**
-    
-    **Fastest Solution:** Run this command and restart the application:
-    ```bash
-    pip install protobuf==3.20.3
-    ```
-    
-    The application will continue with limited vector database functionality. See sidebar for more options.
-    """)
-elif CHROMADB_ERROR and CHROMADB_ERROR != "protobuf_conflict":
-    st.warning(f"""
-    ⚠️ **Vector Database Issue Detected**
-    
-    Error: {CHROMADB_ERROR}
-    
-    The application will continue with basic functionality. Check sidebar for installation instructions.
-    """)
+# ================================================================
+# ERROR DISPLAY (AFTER PAGE CONFIG)
+# ================================================================
+# Display Firebase error if needed
+if not FIREBASE_AVAILABLE:
+    st.warning("🚨 Firebase Admin SDK not installed. Install: pip install firebase-admin")
 
-# Sidebar Configuration
+# Display Vector DB errors if needed
+if not VECTOR_DB_AVAILABLE and CHROMADB_ERROR:
+    if CHROMADB_ERROR == "protobuf_conflict":
+        st.error("""
+        🚨 **ChromaDB Protobuf Conflict Detected!**
+        
+        **Quick Fix Options:**
+        
+        **Option 1 (Recommended):** Downgrade protobuf
+        ```bash
+        pip install protobuf==3.20.3
+        ```
+        
+        **Option 2:** Set environment variable
+        ```bash
+        set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+        ```
+        Then restart your application.
+        
+        **Option 3:** Use alternative vector storage (implemented below)
+        """)
+    elif "Import error" in CHROMADB_ERROR:
+        missing_packages = []
+        if "chromadb" in CHROMADB_ERROR:
+            missing_packages.append("chromadb")
+        if "sentence-transformers" in CHROMADB_ERROR:
+            missing_packages.append("sentence-transformers")
+        
+        if missing_packages:
+            st.warning(f"🚨 Vector database dependencies missing: {', '.join(missing_packages)}. Install: pip install {' '.join(missing_packages)}")
+    else:
+        st.error(f"🚨 ChromaDB initialization error: {CHROMADB_ERROR}")
+
+# Display OpenAI error if needed
+if not OPENAI_AVAILABLE:
+    st.warning("🚨 OpenAI package not found. Install: pip install openai")
+
+# ================================================================
+# SIDEBAR CONFIGURATION
+# ================================================================
 with st.sidebar:
     st.header("🔧 System Configuration")
     
@@ -1580,7 +1592,9 @@ with st.sidebar:
             if st.button("🔄 Refresh Dependencies", key="refresh_file_deps"):
                 st.rerun()
 
-# Main Application Tabs
+# ================================================================
+# MAIN APPLICATION TABS
+# ================================================================
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📈 Dashboard",
     "🤖 AI Assistant", 
@@ -1744,7 +1758,7 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        months = pd.date_range('2024-01-01', periods=12, freq='ME')
+        months = pd.date_range('2025-01-01', periods=12, freq='ME')
         audit_data = {
             'Month': months,
             'Findings': np.random.poisson(8, 12),
@@ -1860,20 +1874,6 @@ with tab2:
                             
                             st.session_state.chat_history.append(ai_message)
                             
-                            firebase_manager = get_firebase_manager()
-                            if firebase_manager.connected:
-                                interaction = {
-                                    "user_query": user_input,
-                                    "ai_response": response['answer'],
-                                    "confidence": response['confidence'],
-                                    "model": response.get('model_used', st.session_state.rag_config.get("model", "qwen/qwen-2.5-72b-instruct") if st.session_state.rag_config else "qwen/qwen-2.5-72b-instruct"),
-                                    "sources": response['sources'],
-                                    "recommendations": response.get('recommendations', []),
-                                    "scenario_type": response.get('scenario_type', 'general'),
-                                    "processing_time": 2000
-                                }
-                                firebase_manager.save_ai_interaction_enhanced(interaction)
-                        
                         except Exception as e:
                             st.error(f"Error: {str(e)}")
                             logger.error(f"Chat error: {e}")
@@ -2696,7 +2696,9 @@ with tab5:
                 else:
                     st.info("💡 Install vector database dependencies (see sidebar)")
 
-# Enhanced Firebase Features Summary
+# ================================================================
+# ENHANCED FIREBASE FEATURES SUMMARY
+# ================================================================
 if firebase_manager.connected:
     with st.expander("🔥 **Enhanced Firebase Features Active**", expanded=False):
         st.markdown("""
@@ -2764,7 +2766,9 @@ if firebase_manager.connected:
         - **Multi-format Support:** Handle diverse document types
         """)
 
-# Advanced Features Showcase
+# ================================================================
+# ADVANCED FEATURES SHOWCASE
+# ================================================================
 st.markdown("---")
 st.subheader("🎯 Advanced System Capabilities")
 
@@ -2800,7 +2804,9 @@ with col3:
     - **Process Optimization:** Efficiency recommendations
     """)
 
-# System Status Summary
+# ================================================================
+# SYSTEM STATUS SUMMARY
+# ================================================================
 st.markdown("---")
 st.subheader("⚡ System Status Summary")
 
@@ -2840,7 +2846,9 @@ for i, (system, status, icon) in enumerate(systems):
         </div>
         """, unsafe_allow_html=True)
 
-# Footer
+# ================================================================
+# FOOTER
+# ================================================================
 st.markdown("---")
 footer_status = []
 if firebase_manager.connected:
@@ -2876,7 +2884,9 @@ st.markdown(f"""
 st.markdown("---")
 st.caption(" | ".join(footer_status))
 
-# Developer disclaimer and credits
+# ================================================================
+# DEVELOPER CREDITS AND DISCLAIMER
+# ================================================================
 st.markdown("---")
 st.markdown("""
 <div class="developer-footer">

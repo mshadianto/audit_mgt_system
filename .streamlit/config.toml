@@ -1,0 +1,96 @@
+# ================================================================
+# .streamlit/config.toml - ENHANCED PRODUCTION CONFIGURATION
+# Optimized for Enterprise RAG AI Audit System | Streamlit 1.39+
+# ================================================================
+
+[global]
+# Global application settings
+developmentMode = false
+unitTest = false
+
+[server]
+# Server configuration optimized for production
+port = 8501
+address = "0.0.0.0"  # Allow external connections
+
+# Enhanced file upload limits for audit documents
+maxUploadSize = 800        # 800MB total upload limit
+maxMessageSize = 200       # 200MB per message
+
+# Security settings (ENHANCED)
+enableCORS = true
+enableXsrfProtection = true
+enableWebsocketCompression = true
+
+# Performance optimizations
+runOnSave = false          # Disable auto-reload in production
+allowRunOnSave = false
+fastReruns = true         # Enable fast reruns
+
+# Session and connection management  
+baseUrlPath = ""
+cookieSecret = "your-secure-cookie-secret-here"  # Change in production!
+
+# Headless mode for deployment
+headless = false
+
+[browser]
+# Browser behavior
+gatherUsageStats = false
+serverAddress = "localhost"
+serverPort = 8501
+
+[theme]
+# Professional enterprise theme
+primaryColor = "#ff6b35"           # Corporate orange
+backgroundColor = "#ffffff"        # Clean white
+secondaryBackgroundColor = "#f8f9fa"  # Light gray for sections
+textColor = "#262730"             # Professional dark text
+font = "sans serif"               # Clean typography
+
+# Enhanced contrast for accessibility
+base = "light"
+
+[logger]
+# Enhanced logging configuration
+level = "info"
+messageFormat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[client]
+# Client-side configuration
+caching = true
+displayEnabled = true
+showErrorDetails = false    # Hide detailed errors in production
+
+[runner]
+# Script runner configuration  
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+postScriptGC = true        # Garbage collection after scripts
+fastReruns = true
+
+# ================================================================
+# PRODUCTION SECURITY SETTINGS
+# ================================================================
+[server.security]
+# Additional security headers (if supported by your deployment)
+# These would be handled by reverse proxy in production
+
+# ================================================================
+# ENVIRONMENT-SPECIFIC OVERRIDES
+# ================================================================
+# For production deployment, consider environment variables:
+# STREAMLIT_THEME_PRIMARY_COLOR=#ff6b35
+# STREAMLIT_SERVER_HEADLESS=true
+# STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+# STREAMLIT_GLOBAL_DEVELOPMENT_MODE=false
+
+# ================================================================
+# DEPLOYMENT NOTES
+# ================================================================
+# 1. Change cookieSecret to a secure random value
+# 2. Set headless=true for production deployment
+# 3. Use environment variables for sensitive configuration
+# 4. Consider placing behind reverse proxy (nginx) for additional security
+# 5. Enable HTTPS in production environment
