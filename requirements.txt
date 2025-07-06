@@ -3,6 +3,9 @@
 # Compatible: Streamlit Cloud + Torch CPU + Firebase + ChromaDB
 # ================================================================
 
+# Package Installer
+pip==25.1.1
+
 # Core Framework
 streamlit==1.39.0
 python-dotenv==1.0.1
@@ -26,7 +29,7 @@ sentence-transformers==2.2.2
 transformers==4.35.2
 sentencepiece==0.2.0
 
-# Torch CPU version (no --find-links needed)
+# Torch CPU version (✅ safe for Streamlit Cloud)
 torch==2.0.1
 torchvision==0.15.2
 
@@ -52,10 +55,10 @@ tenacity==8.2.3
 colorlog==6.8.0
 pydantic==2.5.3
 
-# ONNX Runtime (Optional - for fallback optimization)
+# ONNX Runtime (optional fallback inference layer)
 onnxruntime==1.17.1
 
-# Optional but Useful
+# Optional but useful
 PyYAML==6.0.1
 tqdm==4.66.2
 regex==2024.11.6
@@ -63,7 +66,7 @@ regex==2024.11.6
 # Compatibility Fix
 protobuf==3.20.3
 
-# Fix opentelemetry dependency resolver conflict from chromadb
+# Fix for opentelemetry dependency conflict from ChromaDB
 opentelemetry-api==1.26.0
 opentelemetry-sdk==1.26.0
 opentelemetry-exporter-otlp-proto-grpc==1.26.0
