@@ -1,6 +1,6 @@
 # ================================================================
-# RAG Agentic AI Audit System - Clean Optimized Requirements v3
-# Compatible with: Streamlit 1.39+, OpenAI 1.3.8, ChromaDB 0.4.15
+# RAG Agentic AI Audit System - Optimized Requirements for Streamlit Cloud
+# Compatible: Streamlit Cloud + Torch CPU + Firebase + ChromaDB
 # ================================================================
 
 # Core Framework
@@ -19,16 +19,16 @@ posthog==3.0.2  # ✅ downgrade to avoid capture() bug
 firebase-admin==6.4.0
 google-cloud-firestore==2.11.1
 google-api-core==2.11.0
+googleapis-common-protos==1.61.0
 
 # Sentence Embeddings
 sentence-transformers==2.2.2
 transformers==4.35.2
 sentencepiece==0.2.0
 
-# Core ML & Torch (CPU-only version)
---find-links https://download.pytorch.org/whl/torch_stable.html
-torch==2.1.1+cpu
-torchvision==0.16.1+cpu
+# Torch CPU version (no --find-links needed)
+torch==2.0.1
+torchvision==0.15.2
 
 # Scientific Computing
 numpy==1.24.3
@@ -62,3 +62,12 @@ regex==2024.11.6
 
 # Compatibility Fix
 protobuf==3.20.3
+
+# Fix opentelemetry dependency resolver conflict from chromadb
+opentelemetry-api==1.26.0
+opentelemetry-sdk==1.26.0
+opentelemetry-exporter-otlp-proto-grpc==1.26.0
+opentelemetry-exporter-otlp-proto-common==1.26.0
+opentelemetry-proto==1.26.0
+opentelemetry-semantic-conventions==0.43b0
+opentelemetry-util-http==0.43b0
