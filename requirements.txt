@@ -1,5 +1,6 @@
 # ================================================================
-# RAG Agentic AI Audit System - Optimized Requirements for Streamlit Cloud
+# RAG Agentic AI Audit System - FIXED Requirements for Streamlit Cloud
+# FIXED: OpenTelemetry dependency conflict resolved
 # Compatible: Streamlit Cloud + Torch CPU + Firebase + ChromaDB
 # ================================================================
 
@@ -66,11 +67,16 @@ regex==2024.11.6
 # Compatibility Fix
 protobuf==3.20.3
 
-# Fix for opentelemetry dependency conflict from ChromaDB
+# ================================================================
+# FIXED: OpenTelemetry Dependencies - Aligned versions
+# The issue: opentelemetry-sdk 1.26.0 requires semantic-conventions 0.47b0
+# Solution: Use compatible versions across all opentelemetry packages
+# ================================================================
 opentelemetry-api==1.26.0
 opentelemetry-sdk==1.26.0
 opentelemetry-exporter-otlp-proto-grpc==1.26.0
 opentelemetry-exporter-otlp-proto-common==1.26.0
 opentelemetry-proto==1.26.0
-opentelemetry-semantic-conventions==0.43b0
-opentelemetry-util-http==0.43b0
+# FIXED: Changed from 0.43b0 to 0.47b0 to match SDK requirement
+opentelemetry-semantic-conventions==0.47b0
+opentelemetry-util-http==0.47b0
